@@ -1,0 +1,3 @@
+async function registerUser(){const {data}=await api('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:regName.value,email:regEmail.value,password:regPassword.value,role:regRole.value})});regMsg.textContent=data.message||data.detail||'Done';}
+async function loginUser(){const {response,data}=await api('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:loginEmail.value,password:loginPassword.value})});if(response.ok){localStorage.setItem('token',data.access_token);showApplication();}else loginMsg.textContent=data.detail||'Login failed';}
+function logoutUser(){localStorage.removeItem('token');showApplication();}
