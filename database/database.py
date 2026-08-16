@@ -34,6 +34,8 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base()
 
+
+# Provides a database session for each API request.
 def get_db():
     db = SessionLocal()
     try:
