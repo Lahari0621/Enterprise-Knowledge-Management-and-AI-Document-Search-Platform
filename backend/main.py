@@ -14,7 +14,11 @@ from fastapi.responses import FileResponse
 
 Base.metadata.create_all(bind=engine)
 UPLOAD_DIR=Path(os.getenv('UPLOAD_DIR','./uploads')); UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
-app=FastAPI(title='Enterprise Knowledge Management and AI Document Search Platform',version='1.0.0')
+app=FastAPI(
+    title='Enterprise Knowledge Management and AI Document Search Platform',
+    version='1.0.0',
+    description='Backend API for enterprise document management and AI-powered search.'
+)
 app.add_middleware(CORSMiddleware,allow_origins=['*'],allow_credentials=True,allow_methods=['*'],allow_headers=['*'])
 
 def user_from_header(authorization,db):
