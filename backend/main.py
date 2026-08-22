@@ -191,5 +191,6 @@ def search(q:str,authorization:str|None=Header(default=None),db:Session=Depends(
     cd backend
     venv\Scripts\activate
     uvicorn backend.main:app --reload
+    jenkins= http://localhost:8080
 
 """
