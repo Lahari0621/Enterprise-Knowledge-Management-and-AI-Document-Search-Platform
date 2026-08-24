@@ -39,19 +39,26 @@ pipeline {
         }
 
         stage('Deploy Application') {
-            steps {
-                sh '''
-                    echo "======================================"
-                    echo "Deploying Application"
-                    echo "======================================"
+    steps {
+        sh '''
+            echo "======================================"
+            echo "Deploying Application"
+            echo "======================================"
 
-                    docker-compose down || true
-                    docker-compose up -d
+            echo "Stopping old CI deployment..."
+            docker-compose -p enterprise-knowledge-management-ci down || true
 
-                    docker-compose ps
-                '''
-            }
-        }
+            echo "Stopping previous Pipeline deployment..."
+            docker-compose -p enterprise-knowledge-management-pipeline down || true
+
+            echo "Starting application..."
+            docker-compose up -d
+
+            echo "Checking container status..."
+            docker-compose ps
+        '''
+    }
+}
 
         stage('Wait for Backend') {
             steps {
