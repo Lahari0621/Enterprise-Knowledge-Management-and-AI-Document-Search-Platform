@@ -39,32 +39,55 @@ pipeline {
         }
 
         stage('Deploy Application') {
-    steps {
-        sh '''
-            echo "======================================"
-            echo "Deploying Application"
-            echo "======================================"
+            steps {
+                sh '''
+                    echo "======================================"
+                    echo "Deploying Application"
+                    echo "======================================"
 
-            echo "Stopping old CI deployment..."
-            docker-compose -p enterprise-knowledge-management-ci down || true
+                    echo "Stopping old CI deployment..."
+                    docker-compose -p enterprise-knowledge-management-ci down || true
 
-            echo "Stopping previous Pipeline deployment..."
-            docker-compose -p enterprise-knowledge-management-pipeline down || true
+                    echo "Stopping previous Pipeline deployment..."
+                    docker-compose -p enterprise-knowledge-management-pipeline down || true
 
-            echo "Starting application..."
-            docker-compose up -d
+                    echo "Starting application..."
+                    docker-compose up -d
 
-            echo "Checking container status..."
-            docker-compose ps
-        '''
-    }
-}
+                    echo "Checking container status..."
+                    docker-compose ps
+                '''
+            }
+        }
 
         stage('Wait for Backend') {
             steps {
                 sh '''
-                    echo "Waiting for backend..."
-                    sleep 10
+                    echo "======================================"
+                    echo "Waiting for Backend"
+                    echo "======================================"
+
+                    for i in 1 2 3 4 5 6 7 8 9 10; do
+                        echo "Health check attempt $i..."
+
+                        if curl -f http://host.docker.internal:8000/health; then
+                            echo ""
+                            echo "Backend is ready!"
+                            break
+                        fi
+
+                        if [ "$i" -eq 10 ]; then
+                            echo ""
+                            echo "Backend failed to become ready."
+                            echo "Backend container logs:"
+                            docker-compose logs backend
+                            exit 1
+                        fi
+
+                        echo "Backend not ready yet."
+                        echo "Waiting 5 seconds..."
+                        sleep 5
+                    done
                 '''
             }
         }
@@ -76,7 +99,10 @@ pipeline {
                     echo "Testing Application Health"
                     echo "======================================"
 
-                    curl -i http://host.docker.internal:8000/health
+                    curl -f http://host.docker.internal:8000/health
+
+                    echo ""
+                    echo "Application health check PASSED!"
                 '''
             }
         }
@@ -94,6 +120,9 @@ pipeline {
                     echo ""
                     echo "Testing /api/documents..."
                     curl -i http://host.docker.internal:8000/api/documents
+
+                    echo ""
+                    echo "Authentication security test completed."
                 '''
             }
         }
@@ -105,17 +134,17 @@ pipeline {
                     echo "Document API Security Validation"
                     echo "======================================"
 
-                    STATUS=$(curl -s -o /tmp/doc_response.txt \
-                        -w "%{http_code}" \
+                    STATUS=$(curl -s -o /tmp/doc_response.txt -w "%{http_code}" \
                         http://host.docker.internal:8000/api/documents)
 
                     echo "HTTP Status: $STATUS"
                     cat /tmp/doc_response.txt
+                    echo ""
 
                     if [ "$STATUS" = "401" ]; then
                         echo "PASS: Document API requires authentication."
                     else
-                        echo "FAIL: Unexpected HTTP status."
+                        echo "FAIL: Document API security validation failed."
                         exit 1
                     fi
                 '''
@@ -146,6 +175,10 @@ pipeline {
 
         failure {
             echo 'CI/CD Pipeline failed. Check the console output.'
+        }
+
+        always {
+            echo 'Jenkins Pipeline execution finished.'
         }
     }
 }
